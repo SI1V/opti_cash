@@ -13,7 +13,12 @@ app = FastAPI(
 # Настройка CORS для работы с фронтендом
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://192.168.1.210",  # Raspberry Pi IP
+        "http://192.168.1.210:80",  # Если порт явно указан
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -1,0 +1,43 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      platform: linux/arm64  # Для Raspberry Pi
+    container_name: cashback_backend
+    volumes:
+      - backend_data:/app/data
+      - ./backend/uploads:/app/uploads
+    environment:
+      DATABASE_URL: "sqlite:///./data/cashback_optimizer.db"
+      PYTHONUNBUFFERED: "1"
+      SECRET_KEY: "your-production-secret-key-change-me"
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      platform: linux/arm64  # Для Raspberry Pi
+      args:
+        REACT_APP_API_BASE_URL: "/api"
+    container_name: cashback_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  backend_data:
+    driver: local

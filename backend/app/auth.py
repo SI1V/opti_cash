@@ -7,9 +7,10 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, TokenData
+import os
 
 # Настройки для JWT
-SECRET_KEY = "your-secret-key-change-in-production"  # В продакшене используйте переменную окружения
+SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")  # В продакшене задайте переменную окружения
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
