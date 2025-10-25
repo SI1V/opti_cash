@@ -3,7 +3,6 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-      platform: linux/arm64  # Для Raspberry Pi
     container_name: cashback_backend
     volumes:
       - backend_data:/app/data
@@ -22,7 +21,6 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      platform: linux/arm64  # Для Raspberry Pi
       args:
         REACT_APP_API_BASE_URL: "/api"
     container_name: cashback_frontend
