@@ -12,7 +12,7 @@ import {
   Alert,
 } from '@mui/material';
 import { Search as SearchIcon, CreditCard as CreditCardIcon } from '@mui/icons-material';
-import { banksApi, cashbackApi } from '../services/api';
+import { cashbackApi } from '../services/api';
 
 function Recommendations() {
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -27,8 +27,15 @@ function Recommendations() {
 
   const loadCategories = async () => {
     try {
-      const response = await cashbackApi.getCategories();
-      // Получаем уникальные категории
+      // Получаем только категории текущего месяца
+      const currentMonth = new Date().getMonth() + 1;
+      const currentYear = new Date().getFullYear();
+      
+      const response = await cashbackApi.getCategories({
+        month: currentMonth,
+        year: currentYear
+      });
+      // Получаем уникальные категории текущего месяца
       const categories = [...new Set(response.data.map(c => c.category_name))];
       setAllCategories(categories);
     } catch (error) {
@@ -46,11 +53,18 @@ function Recommendations() {
     setError(null);
 
     try {
-      const response = await cashbackApi.getRecommendations(selectedCategory);
+      // Получаем текущий месяц и год для фильтрации
+      const currentMonth = new Date().getMonth() + 1;
+      const currentYear = new Date().getFullYear();
+      
+      const response = await cashbackApi.getRecommendations(selectedCategory, {
+        month: currentMonth,
+        year: currentYear
+      });
       setRecommendations(response.data.recommendations || []);
       
       if (response.data.recommendations.length === 0) {
-        setError('Нет рекомендаций для выбранной категории. Добавьте категории кешбека для ваших карт.');
+        setError('Нет рекомендаций для выбранной категории на текущий месяц. Добавьте категории кешбека для ваших карт.');
       }
     } catch (err) {
       setError('Ошибка при получении рекомендаций');

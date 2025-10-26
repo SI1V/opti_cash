@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '/api';
+// Для разработки используем localhost:8000, для продакшена через nginx - /api
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 
+  (process.env.NODE_ENV === 'development' ? 'http://localhost:8000' : '/api');
 
 const api = axios.create({
   baseURL: API_BASE_URL,

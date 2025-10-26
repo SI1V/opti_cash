@@ -1,15 +1,14 @@
-# Backend Dockerfile - Multi-stage build для уменьшения размера
-FROM python:3.11-slim as builder
+# Альтернативный Dockerfile с Alpine для минимального размера образа (~200MB вместо 15GB)
+FROM python:3.11-alpine as builder
 
 WORKDIR /app
 
 # Устанавливаем зависимости для сборки
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-       build-essential \
-       gcc \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache \
+    gcc \
+    musl-dev \
+    linux-headers \
+    postgresql-dev
 
 # Устанавливаем Python зависимости
 COPY requirements.txt /app/requirements.txt
@@ -17,7 +16,7 @@ RUN pip install --upgrade pip \
     && pip install --no-cache-dir --user -r /app/requirements.txt
 
 # Production stage
-FROM python:3.11-slim
+FROM python:3.11-alpine
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -25,13 +24,10 @@ ENV PATH=/root/.local/bin:$PATH
 
 WORKDIR /app
 
-# Копируем только runtime зависимости и Tesseract OCR
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-       tesseract-ocr \
-       tesseract-ocr-rus \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# Устанавливаем Tesseract и русские языковые пакеты
+RUN apk add --no-cache \
+    tesseract-ocr \
+    tesseract-ocr-data-rus
 
 # Копируем установленные Python пакеты из builder
 COPY --from=builder /root/.local /root/.local
@@ -46,4 +42,3 @@ EXPOSE 8000
 
 # Запускаем приложение
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-

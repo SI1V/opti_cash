@@ -9,9 +9,11 @@ from app.auth import (
     create_access_token, 
     get_password_hash, 
     get_current_active_user,
-    verify_password,
-    ACCESS_TOKEN_EXPIRE_MINUTES
+    verify_password
 )
+
+# Длительность жизни токена
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 

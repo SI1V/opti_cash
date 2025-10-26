@@ -130,7 +130,6 @@ function Home() {
                   sx={{ 
                     color: index === 0 ? 'primary.main' : 
                           index === 1 ? 'success.main' : 'secondary.main',
-                    mb: 2,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',

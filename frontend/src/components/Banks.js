@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Card,
@@ -12,9 +12,6 @@ import {
   DialogActions,
   IconButton,
   List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
   Accordion,
   AccordionSummary,
   AccordionDetails,
@@ -34,25 +31,45 @@ function Banks() {
   const [banks, setBanks] = useState([]);
   const [bankDialogOpen, setBankDialogOpen] = useState(false);
   const [cardDialogOpen, setCardDialogOpen] = useState(false);
+  const [editBankDialogOpen, setEditBankDialogOpen] = useState(false);
+  const [editCardDialogOpen, setEditCardDialogOpen] = useState(false);
   const [newBankName, setNewBankName] = useState('');
+  const [editingBank, setEditingBank] = useState(null);
   const [newCard, setNewCard] = useState({ name: '', card_type: '' });
+  const [editingCard, setEditingCard] = useState(null);
   const [selectedBankId, setSelectedBankId] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [editCategoryDialogOpen, setEditCategoryDialogOpen] = useState(false);
 
-  useEffect(() => {
-    loadBanks();
-  }, []);
+  const getCurrentMonth = () => new Date().getMonth() + 1;
+  const getCurrentYear = () => new Date().getFullYear();
 
-  const loadBanks = async () => {
+  const loadBanks = useCallback(async () => {
     try {
       const response = await banksApi.getAll();
-      setBanks(response.data);
+      // Фильтруем категории только текущего месяца
+      const currentMonth = getCurrentMonth();
+      const currentYear = getCurrentYear();
+      
+      const filteredBanks = response.data.map(bank => ({
+        ...bank,
+        cards: bank.cards?.map(card => ({
+          ...card,
+          cashback_categories: card.cashback_categories?.filter(
+            cat => cat.month === currentMonth && cat.year === currentYear
+          ) || []
+        })) || []
+      }));
+      
+      setBanks(filteredBanks);
     } catch (error) {
       console.error('Error loading banks:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadBanks();
+  }, [loadBanks]);
 
   const handleAddBank = async () => {
     try {
@@ -63,6 +80,24 @@ function Banks() {
     } catch (error) {
       console.error('Error adding bank:', error);
     }
+  };
+
+  const handleEditBank = async () => {
+    try {
+      await banksApi.update(editingBank.id, { name: newBankName });
+      setNewBankName('');
+      setEditingBank(null);
+      setEditBankDialogOpen(false);
+      loadBanks();
+    } catch (error) {
+      console.error('Error updating bank:', error);
+    }
+  };
+
+  const openEditBankDialog = (bank) => {
+    setEditingBank(bank);
+    setNewBankName(bank.name);
+    setEditBankDialogOpen(true);
   };
 
   const handleDeleteBank = async (bankId) => {
@@ -83,6 +118,26 @@ function Banks() {
     } catch (error) {
       console.error('Error adding card:', error);
     }
+  };
+
+  const handleEditCard = async () => {
+    try {
+      await cardsApi.update(editingCard.id, {
+        name: editingCard.name,
+        card_type: editingCard.card_type
+      });
+      setEditingCard(null);
+      setNewCard({ name: '', card_type: '' });
+      setEditCardDialogOpen(false);
+      loadBanks();
+    } catch (error) {
+      console.error('Error updating card:', error);
+    }
+  };
+
+  const openEditCardDialog = (card) => {
+    setEditingCard({ ...card });
+    setEditCardDialogOpen(true);
   };
 
   const handleDeleteCard = async (cardId) => {
@@ -151,7 +206,7 @@ function Banks() {
               <Typography variant="h6">{bank.name}</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+              <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
                 <Button
                   size="small"
                   startIcon={<AddIcon />}
@@ -163,9 +218,14 @@ function Banks() {
                   Добавить карту
                 </Button>
                 <IconButton
+                  color="primary"
+                  onClick={() => openEditBankDialog(bank)}
+                >
+                  <EditIcon />
+                </IconButton>
+                <IconButton
                   color="error"
                   onClick={() => handleDeleteBank(bank.id)}
-                  sx={{ ml: 1 }}
                 >
                   <DeleteIcon />
                 </IconButton>
@@ -186,6 +246,13 @@ function Banks() {
                           </Typography>
                         </Box>
                         <IconButton
+                          color="primary"
+                          size="small"
+                          onClick={() => openEditCardDialog(card)}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton
                           color="error"
                           size="small"
                           onClick={() => handleDeleteCard(card.id)}
@@ -197,7 +264,7 @@ function Banks() {
                       {card.cashback_categories && card.cashback_categories.length > 0 ? (
                         <Box sx={{ mt: 2 }}>
                           <Typography variant="caption" color="text.secondary" gutterBottom display="block">
-                            Категории кешбека:
+                            Категории кешбека (текущий месяц):
                           </Typography>
                           {card.cashback_categories.map((category) => {
                             
@@ -261,8 +328,37 @@ function Banks() {
         </DialogActions>
       </Dialog>
 
+      {/* Dialog for editing bank */}
+      <Dialog open={editBankDialogOpen} onClose={() => setEditBankDialogOpen(false)}>
+        <DialogTitle>Редактировать банк</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Название банка"
+            fullWidth
+            variant="outlined"
+            value={newBankName}
+            onChange={(e) => setNewBankName(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setEditBankDialogOpen(false);
+            setEditingBank(null);
+            setNewBankName('');
+          }}>Отмена</Button>
+          <Button onClick={handleEditBank} variant="contained">
+            Сохранить
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Dialog for adding card */}
-      <Dialog open={cardDialogOpen} onClose={() => setCardDialogOpen(false)}>
+      <Dialog open={cardDialogOpen} onClose={() => {
+        setCardDialogOpen(false);
+        setNewCard({ name: '', card_type: '' });
+      }}>
         <DialogTitle>Добавить карту</DialogTitle>
         <DialogContent>
           <TextField
@@ -285,9 +381,49 @@ function Banks() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCardDialogOpen(false)}>Отмена</Button>
+          <Button onClick={() => {
+            setCardDialogOpen(false);
+            setNewCard({ name: '', card_type: '' });
+          }}>Отмена</Button>
           <Button onClick={handleAddCard} variant="contained">
             Добавить
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog for editing card */}
+      <Dialog open={editCardDialogOpen} onClose={() => {
+        setEditCardDialogOpen(false);
+        setEditingCard(null);
+      }}>
+        <DialogTitle>Редактировать карту</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Название карты"
+            fullWidth
+            variant="outlined"
+            value={editingCard?.name || ''}
+            onChange={(e) => setEditingCard({ ...editingCard, name: e.target.value })}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            label="Тип карты (необязательно)"
+            fullWidth
+            variant="outlined"
+            value={editingCard?.card_type || ''}
+            onChange={(e) => setEditingCard({ ...editingCard, card_type: e.target.value })}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setEditCardDialogOpen(false);
+            setEditingCard(null);
+          }}>Отмена</Button>
+          <Button onClick={handleEditCard} variant="contained">
+            Сохранить
           </Button>
         </DialogActions>
       </Dialog>

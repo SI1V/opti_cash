@@ -17,24 +17,24 @@ import {
   useMediaQuery,
   useTheme,
   Button,
-  createTheme,
   ThemeProvider,
   CssBaseline,
 } from '@mui/material';
+import { createTheme } from '@mui/material/styles';
 import {
   Home as HomeIcon,
-  CreditCard as CreditCardIcon,
   PhotoCamera as PhotoCameraIcon,
-  Search as SearchIcon,
   Logout as LogoutIcon,
   AccountBalance as BankIcon,
   TrendingUp as TrendingUpIcon,
+  Timeline as TimelineIcon,
 } from '@mui/icons-material';
 
 import Home from './components/Home';
 import Banks from './components/Banks';
 import Recommendations from './components/Recommendations';
 import ScreenshotUpload from './components/ScreenshotUpload';
+import Statistics from './components/Statistics';
 import Login from './components/Login';
 import Register from './components/Register';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -164,6 +164,7 @@ function Navigation() {
     else if (path === '/banks') setValue(1);
     else if (path === '/recommendations') setValue(2);
     else if (path === '/screenshot') setValue(3);
+    else if (path === '/statistics') setValue(4);
   }, [location]);
 
   React.useEffect(() => {
@@ -237,6 +238,12 @@ function Navigation() {
             component={Link}
             to="/screenshot"
           />
+          <BottomNavigationAction
+            label="Статистика"
+            icon={<TimelineIcon />}
+            component={Link}
+            to="/statistics"
+          />
         </BottomNavigation>
       </>
     );
@@ -284,6 +291,15 @@ function Navigation() {
             sx={{ px: 2, py: 1, borderRadius: 1, '&:hover': { bgcolor: 'action.hover' } }}
           >
             Скриншот
+          </Typography>
+          <Typography
+            component={Link}
+            to="/statistics"
+            color="inherit"
+            underline="none"
+            sx={{ px: 2, py: 1, borderRadius: 1, '&:hover': { bgcolor: 'action.hover' } }}
+          >
+            Статистика
           </Typography>
           {user && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2 }}>
@@ -346,6 +362,11 @@ function AppContent() {
           <Route path="/screenshot" element={
             <ProtectedRoute>
               <ScreenshotUpload />
+            </ProtectedRoute>
+          } />
+          <Route path="/statistics" element={
+            <ProtectedRoute>
+              <Statistics />
             </ProtectedRoute>
           } />
         </Routes>

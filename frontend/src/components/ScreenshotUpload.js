@@ -10,9 +10,6 @@ import {
   TextField,
   Grid,
   MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
 } from '@mui/material';
 import { CloudUpload as CloudUploadIcon, CameraAlt as CameraAltIcon } from '@mui/icons-material';
 import { ocrApi, banksApi, cashbackApi } from '../services/api';
